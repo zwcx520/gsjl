@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工时记录系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5d4ae3;
+            --secondary: #a29bfe;
+            --light: #f8f9fa;
+            --dark: #2d3748;
+            --success: #00b894;
+            --danger: #ff7675;
+            --warning: #fdcb6e;
+            --gray: #a0aec0;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --sidebar-width: 280px;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            color: var(--dark);
+            display: flex;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        /* 左侧边栏样式 */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(160deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px 20px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            margin-bottom: 40px;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .sidebar-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 30px;
+        }
+        
+        .nav-link {
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .new-record-btn {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .new-record-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .stored-records {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            max-height: 300px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 自定义滚动条样式 */
+        .stored-records::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .stored-records::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .stored-records::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 4px;
+        }
+        
+        .stored-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stored-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stored-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .stored-date {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .stored-hours {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stored-periods {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        /* 主内容区样式 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            margin-left: var(--sidebar-width);
+            transition: margin 0.3s ease;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e6ed;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .date-display {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .date-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .date-input {
+            padding: 10px 15px;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .today-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.3);
+        }
+        
+        .today-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        .time-records {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .total-hours {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(108, 92, 231, 0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+        
+        .records-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            min-height: 200px;
+        }
+        
+        .record-item {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+            border-left: 5px solid var(--primary);
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .record-item:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .record-period {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .period-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .period-hours {
+            font-weight: 600;
+            color: var(--primary);
+            background: rgba(108, 92, 231, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 15px;
+        }
+        
+        .time-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+        
+        .time-input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .time-input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #718096;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .time-input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: white;
+        }
+        
+        .time-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+        
+        .record-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-save {
+            background-color: var(--success);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 184, 148, 0.3);
+        }
+        
+        .btn-save:hover {
+            background-color: #00a884;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 184, 148, 0.4);
+        }
+        
+        .btn-delete {
+            background-color: var(--danger);
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 118, 117, 0.3);
+        }
+        
+        .btn-delete:hover {
+            background-color: #ff5e5e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 118, 117, 0.4);
+        }
+        
+        .btn-add {
+            background-color: var(--primary);
+            color: white;
+            padding: 14px 28px;
+            font-weight: 600;
+            font-size: 17px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 25px auto 0;
+            box-shadow: 0 6px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        .btn-add:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.5);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 35px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+        
+        .icon-primary {
+            background: rgba(108, 92, 231, 0.1);
+            color: var(--primary);
+        }
+        
+        .icon-success {
+            background: rgba(0, 184, 148, 0.1);
+            color: var(--success);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+        
+        .stat-label {
+            font-size: 17px;
+            color: #718096;
+            text-align: center;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            grid-column: 1 / -1;
+        }
+        
+        .empty-icon {
+            font-size: 64px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+        
+        .empty-text {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 25px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+                padding: 25px 15px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+                padding: 25px;
+            }
+            
+            .records-container {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 20px 15px;
+            }
+            
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: var(--primary);
+                color: white;
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 101;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+            
+            .header {
+                margin-top: 70px;
+            }
+            
+            .records-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .date-picker {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .date-input {
+                width: 100%;
+            }
+            
+            .record-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .time-records {
+                padding: 20px;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .record-item {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        /* 实用类 */
+        .hidden {
+            display: none;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .badge-primary {
+            background: rgba(108, 92, 231, 0.15);
+            color: var(--primary);
+        }
+        
+        .no-records {
+            text-align: center;
+            padding: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        .date-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .date-info i {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 移动端菜单切换按钮 -->
+    <div class="menu-toggle hidden" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <!-- 左侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <i class="fas fa-clock"></i>
+                <span>工时记录系统</span>
+            </div>
+            <div class="sidebar-subtitle">高效记录工作时间</div>
+        </div>
+        
+       
+        
+        <div class="sidebar-section">
+            <div class="section-header">
+                <i class="fas fa-plus-circle"></i>
+                <span>新建记录</span>
+            </div>
+            <button class="new-record-btn" id="newRecordBtn">
+                <i class="fas fa-clock"></i> 添加工时记录
+            </button>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-header">
+                <i class="fas fa-search"></i>
+                <span>搜索记录</span>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索日期或工时...">
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-header">
+                <i class="fas fa-database"></i>
+                <span>已存储工时</span>
+            </div>
+            <div class="stored-records" id="storedRecords">
+                <!-- 动态生成已存储工时列表 -->
+                <div class="no-records">暂无存储的工时记录</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: auto; text-align: center; padding-top: 20px; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+            <p>工时记录系统 v2.0</p>
+        </div>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="header">
+            <div class="date-display">
+                <i class="fas fa-calendar-alt"></i>
+                <span id="currentDate">2025年10月19日</span>
+                <span class="badge badge-primary" id="todayBadge">今天</span>
+            </div>
+            
+            <div class="date-picker">
+                <input type="date" class="date-input" id="datePicker">
+                <button class="today-btn" id="todayBtn">
+                    <i class="fas fa-calendar-day"></i> 返回今天
+                </button>
+            </div>
+        </div>
+        
+        <div class="date-info">
+            <i class="fas fa-info-circle"></i>
+            <span>您可以添加任何日期的工时记录，包括过去的日期</span>
+        </div>
+        
+        <div class="time-records">
+            <div class="record-header">
+                <div class="section-title">
+                    <i class="fas fa-list-check"></i>
+                    <span id="recordsTitle">今日工时记录</span>
+                </div>
+                <div class="total-hours">总工时: <span id="total-hours">0.0</span> 小时</div>
+            </div>
+            
+            <div class="records-container" id="recordsContainer">
+                <!-- 初始为空状态 -->
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="far fa-clock"></i>
+                    </div>
+                    <h3 class="empty-text">尚未添加任何工时记录</h3>
+                    <p>点击下方按钮开始记录您的工作时间</p>
+                </div>
+            </div>
+            
+            <button class="btn btn-add" id="addPeriodBtn">
+                <i class="fas fa-plus"></i> 添加新时段
+            </button>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon icon-primary">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-value"><span id="weekHours">0.0</span> 小时</div>
+                <div class="stat-label">本周总工时</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon icon-success">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="stat-value"><span id="avgHours">0.0</span> 小时</div>
+                <div class="stat-label">日均工时</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon icon-primary">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-value"><span id="workDays">0</span> 天</div>
+                <div class="stat-label">本月工作天数</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM元素
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        const datePicker = document.getElementById('datePicker');
+        const todayBtn = document.getElementById('todayBtn');
+        const currentDateEl = document.getElementById('currentDate');
+        const todayBadge = document.getElementById('todayBadge');
+        const newRecordBtn = document.getElementById('newRecordBtn');
+        const addPeriodBtn = document.getElementById('addPeriodBtn');
+        const recordsContainer = document.getElementById('recordsContainer');
+        const recordsTitle = document.getElementById('recordsTitle');
+        const totalHoursEl = document.getElementById('total-hours');
+        const searchInput = document.getElementById('searchInput');
+        const storedRecords = document.getElementById('storedRecords');
+        
+        // 时段计数器
+        let periodCount = 0;
+        const maxPeriods = 4;
+        
+        // 当前选中的日期
+        let currentDate = new Date();
+        
+        // 数据存储
+        let timeRecords = {};
+        
+        // 初始化
+        function init() {
+            loadRecords();
+            setupEventListeners();
+            setCurrentDate(currentDate);
+            updateStoredRecords();
+        }
+        
+        // 设置当前日期
+        function setCurrentDate(date) {
+            currentDate = date;
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            
+            currentDateEl.textContent = `${year}年${month}月${day}日`;
+            datePicker.value = formattedDate;
+            
+            // 更新标题
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (date.getTime() === today.getTime()) {
+                recordsTitle.textContent = '今日工时记录';
+                todayBadge.style.display = 'inline-block';
+            } else {
+                recordsTitle.textContent = `${month}月${day}日工时记录`;
+                todayBadge.style.display = 'none';
+            }
+            
+            // 加载该日期的记录
+            loadDateRecords(date);
+        }
+        
+        // 加载记录
+        function loadRecords() {
+            const stored = localStorage.getItem('timeRecords');
+            if (stored) {
+                timeRecords = JSON.parse(stored);
+            }
+        }
+        
+        // 保存记录
+        function saveRecords() {
+            localStorage.setItem('timeRecords', JSON.stringify(timeRecords));
+            updateStoredRecords();
+        }
+        
+        // 加载特定日期的记录
+        function loadDateRecords(date) {
+            const dateStr = formatDate(date);
+            const records = timeRecords[dateStr] || [];
+            
+            // 清空容器
+            recordsContainer.innerHTML = '';
+            
+            if (records.length === 0) {
+                // 显示空状态
+                recordsContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="far fa-clock"></i>
+                        </div>
+                        <h3 class="empty-text">尚未添加任何工时记录</h3>
+                        <p>点击下方按钮开始记录您的工作时间</p>
+                    </div>
+                `;
+            } else {
+                // 显示记录
+                periodCount = records.length;
+                records.forEach((record, index) => {
+                    addPeriodElement(record, index);
+                });
+            }
+            
+            updateHours();
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 移动端菜单切换
+            if (window.innerWidth <= 768) {
+                menuToggle.classList.remove('hidden');
+                
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                    menuToggle.innerHTML = sidebar.classList.contains('active') ? 
+                        '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+                });
+            }
+            
+            // 窗口大小变化时处理菜单
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) {
+                    menuToggle.classList.add('hidden');
+                    sidebar.classList.remove('active');
+                } else {
+                    menuToggle.classList.remove('hidden');
+                }
+            });
+            
+            // 添加新时段按钮事件
+            addPeriodBtn.addEventListener('click', addNewPeriod);
+            
+            // 新建记录按钮事件
+            newRecordBtn.addEventListener('click', addNewPeriod);
+            
+            // 返回今天按钮事件
+            todayBtn.addEventListener('click', () => {
+                setCurrentDate(new Date());
+            });
+            
+            // 日期选择器事件
+            datePicker.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                setCurrentDate(selectedDate);
+            });
+            
+            // 搜索功能
+            searchInput.addEventListener('input', debounce(handleSearch, 300));
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleSearch();
+                }
+            });
+        }
+        
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // 处理搜索
+        function handleSearch() {
+            const query = searchInput.value.trim();
+            if (query === '') {
+                return;
+            }
+            
+            // 直接跳转到搜索的日期
+            const date = new Date(query);
+            if (!isNaN(date)) {
+                setCurrentDate(date);
+            }
+        }
+        
+        // 更新已存储工时列表
+        function updateStoredRecords() {
+            const dates = Object.keys(timeRecords).sort().reverse();
+            
+            if (dates.length === 0) {
+                storedRecords.innerHTML = `
+                    <div class="no-records">暂无存储的工时记录</div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            dates.forEach(date => {
+                const records = timeRecords[date];
+                let totalHours = 0;
+                
+                records.forEach(record => {
+                    if (record.start && record.end) {
+                        totalHours += calculateHours(record.start, record.end);
+                    }
+                });
+                
+                const dateObj = new Date(date);
+                const year = dateObj.getFullYear();
+                const month = dateObj.getMonth() + 1;
+                const day = dateObj.getDate();
+                
+                html += `
+                    <div class="stored-item" data-date="${date}">
+                        <div>
+                            <div class="stored-date">${year}年${month}月${day}日</div>
+                            <div class="stored-hours">
+                                <i class="fas fa-clock"></i> ${totalHours.toFixed(1)} 小时
+                            </div>
+                        </div>
+                        <div class="stored-periods">${records.length}个时段</div>
+                    </div>
+                `;
+            });
+            
+            storedRecords.innerHTML = html;
+            
+            // 添加点击事件
+            document.querySelectorAll('.stored-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const dateStr = this.getAttribute('data-date');
+                    const date = new Date(dateStr);
+                    setCurrentDate(date);
+                    
+                    // 移动端关闭侧边栏
+                    if (window.innerWidth <= 768) {
+                        sidebar.classList.remove('active');
+                        menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+                    }
+                });
+            });
+        }
+        
+        // 计算工时函数
+        function calculateHours(start, end) {
+            if (!start || !end) return 0;
+            
+            const [startHour, startMinute] = start.split(':').map(Number);
+            const [endHour, endMinute] = end.split(':').map(Number);
+            
+            let hours = endHour - startHour;
+            let minutes = endMinute - startMinute;
+            
+            if (minutes < 0) {
+                hours--;
+                minutes += 60;
+            }
+            
+            return hours + minutes / 60;
+        }
+        
+        // 更新工时显示
+        function updateHours() {
+            const dateStr = formatDate(currentDate);
+            const records = timeRecords[dateStr] || [];
+            let totalHours = 0;
+            
+            // 更新每个时段的工时
+            records.forEach((record, index) => {
+                const hours = calculateHours(record.start, record.end);
+                
+                // 更新时段工时显示
+                const periodHours = document.querySelectorAll('.period-hours span')[index];
+                if (periodHours) {
+                    periodHours.textContent = hours.toFixed(1);
+                }
+                
+                // 累加总工时
+                if (hours > 0) {
+                    totalHours += hours;
+                }
+            });
+            
+            // 更新总工时显示
+            totalHoursEl.textContent = totalHours.toFixed(1);
+            
+            // 更新统计信息
+            updateStatistics();
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            // 计算本周总工时
+            const weekHours = calculateWeekHours();
+            document.getElementById('weekHours').textContent = weekHours.toFixed(1);
+            
+            // 计算日均工时
+            const avgHours = calculateAverageHours();
+            document.getElementById('avgHours').textContent = avgHours.toFixed(1);
+            
+            // 计算本月工作天数
+            const workDays = calculateWorkDays();
+            document.getElementById('workDays').textContent = workDays;
+        }
+        
+        // 计算本周总工时
+        function calculateWeekHours() {
+            const today = new Date(currentDate);
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            
+            let weekHours = 0;
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startOfWeek);
+                date.setDate(startOfWeek.getDate() + i);
+                const dateStr = formatDate(date);
+                
+                if (timeRecords[dateStr]) {
+                    timeRecords[dateStr].forEach(record => {
+                        weekHours += calculateHours(record.start, record.end);
+                    });
+                }
+            }
+            
+            return weekHours;
+        }
+        
+        // 计算日均工时
+        function calculateAverageHours() {
+            const dateStr = formatDate(currentDate);
+            const records = timeRecords[dateStr] || [];
+            let totalHours = 0;
+            
+            records.forEach(record => {
+                totalHours += calculateHours(record.start, record.end);
+            });
+            
+            return totalHours;
+        }
+        
+        // 计算本月工作天数
+        function calculateWorkDays() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const startDate = new Date(year, month, 1);
+            const endDate = new Date(year, month + 1, 0);
+            
+            let workDays = 0;
+            for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
+                const dateStr = formatDate(date);
+                if (timeRecords[dateStr] && timeRecords[dateStr].length > 0) {
+                    workDays++;
+                }
+            }
+            
+            return workDays;
+        }
+        
+        // 添加新时段
+        function addNewPeriod() {
+            if (periodCount >= maxPeriods) {
+                alert(`最多只能添加${maxPeriods}个时段`);
+                return;
+            }
+            
+            periodCount++;
+            
+            // 移除空状态
+            if (recordsContainer.querySelector('.empty-state')) {
+                recordsContainer.innerHTML = '';
+            }
+            
+            // 创建新时段元素
+            addPeriodElement({start: '', end: ''}, periodCount - 1);
+            
+            // 更新数据
+            saveCurrentDateRecords();
+        }
+        
+        // 添加时段元素
+        function addPeriodElement(record, index) {
+            // 时段名称数组
+            const periodNames = ["上午时段", "下午时段", "晚间时段", "夜间时段"];
+            const periodIcons = ["fa-sun", "fa-sun", "fa-moon", "fa-moon"];
+            
+            const periodIndex = index;
+            const periodName = periodNames[periodIndex] || `时段 ${periodIndex + 1}`;
+            const periodIcon = periodIcons[periodIndex] || "fa-clock";
+            
+            // 创建新时段元素
+            const periodElement = document.createElement('div');
+            periodElement.className = 'record-item';
+            periodElement.innerHTML = `
+                <div class="record-period">
+                    <div class="period-label">
+                        <i class="fas ${periodIcon}"></i>
+                        <span>${periodName}</span>
+                    </div>
+                    <div class="period-hours"><span>${record.start && record.end ? calculateHours(record.start, record.end).toFixed(1) : '0.0'}</span> 小时</div>
+                </div>
+                <div class="time-inputs">
+                    <div class="time-input-group">
+                        <label for="start-time-${index}"><i class="fas fa-sign-in-alt"></i> 上班时间</label>
+                        <input type="time" class="time-input start-time" id="start-time-${index}" value="${record.start || ''}">
+                    </div>
+                    <div class="time-input-group">
+                        <label for="end-time-${index}"><i class="fas fa-sign-out-alt"></i> 下班时间</label>
+                        <input type="time" class="time-input end-time" id="end-time-${index}" value="${record.end || ''}">
+                    </div>
+                </div>
+                <div class="record-actions">
+                    <button class="btn btn-delete delete-period">
+                        <i class="fas fa-trash"></i> 删除
+                    </button>
+                    <button class="btn btn-save">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            `;
+            
+            recordsContainer.appendChild(periodElement);
+            
+            // 添加事件监听
+            periodElement.querySelector('.start-time').addEventListener('change', function() {
+                updateHours();
+                saveCurrentDateRecords();
+            });
+            
+            periodElement.querySelector('.end-time').addEventListener('change', function() {
+                updateHours();
+                saveCurrentDateRecords();
+            });
+            
+            periodElement.querySelector('.delete-period').addEventListener('click', function() {
+                if (confirm('确定要删除这个时段吗？')) {
+                    periodElement.remove();
+                    periodCount--;
+                    saveCurrentDateRecords();
+                    
+                    // 如果没有时段了，显示空状态
+                    if (periodCount === 0) {
+                        recordsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">
+                                    <i class="far fa-clock"></i>
+                                </div>
+                                <h3 class="empty-text">尚未添加任何工时记录</h3>
+                                <p>点击下方按钮开始记录您的工作时间</p>
+                            </div>
+                        `;
+                    }
+                }
+            });
+            
+            periodElement.querySelector('.btn-save').addEventListener('click', function() {
+                const recordItem = this.closest('.record-item');
+                alert('记录已保存！');
+                recordItem.style.borderLeftColor = '#00b894';
+                setTimeout(() => {
+                    recordItem.style.borderLeftColor = '#6c5ce7';
+                }, 2000);
+                
+                saveCurrentDateRecords();
+            });
+            
+            // 添加动画效果
+            periodElement.style.animation = 'fadeIn 0.5s ease forwards';
+        }
+        
+        // 保存当前日期的记录
+        function saveCurrentDateRecords() {
+            const dateStr = formatDate(currentDate);
+            const records = [];
+            
+            document.querySelectorAll('.record-item').forEach(item => {
+                const start = item.querySelector('.start-time').value;
+                const end = item.querySelector('.end-time').value;
+                records.push({start, end});
+            });
+            
+            if (records.length > 0) {
+                timeRecords[dateStr] = records;
+            } else {
+                delete timeRecords[dateStr];
+            }
+            
+            saveRecords();
+            updateStatistics();
+        }
+        
+        // 格式化日期为 YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // 初始化应用
+        init();
+    </script>
+</body>
+</html>
