@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工时记录系统</title>
+    <title>工时记录系统-不见桃花不见秋</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -419,6 +419,25 @@
             box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
         }
         
+        /* 备注输入框样式 */
+        .note-input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            background: white;
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .note-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+        
         .record-actions {
             display: flex;
             justify-content: flex-end;
@@ -705,14 +724,16 @@
     
     <!-- 左侧边栏 -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header"><br><br>
+    <br><br>
+        <div class="sidebar-header">
             <div class="sidebar-title">
                 <i class="fas fa-clock"></i>
                 <span>工时记录系统</span>
             </div>
-            </div>
+            <div class="sidebar-subtitle">高效记录工作时间</div>
+        </div>
         
-       
+        
         
         <div class="sidebar-section">
             <div class="section-header">
@@ -727,7 +748,7 @@
         <div class="sidebar-section">
             <div class="section-header">
                 <i class="fas fa-search"></i>
-                <span>搜索记录</span>
+                <span>搜索工时日期</span>
             </div>
             <div class="search-box">
                 <i class="fas fa-search search-icon"></i>
@@ -756,7 +777,7 @@
         <div class="header">
             <div class="date-display">
                 <i class="fas fa-calendar-alt"></i>
-                <span id="currentDate">2025年10月19日</span>
+                <span id="currentDate"></span>
                 <span class="badge badge-primary" id="todayBadge">今天</span>
             </div>
             
@@ -799,8 +820,7 @@
         </div>
         
         <div class="stats-container">
-           
-             <div class="stat-card">
+            <div class="stat-card">
                 <div class="stat-icon icon-primary">
                     <i class="fas fa-calendar-week"></i>
                 </div>
@@ -813,7 +833,7 @@
                     <i class="fas fa-calendar-day"></i>
                 </div>
                 <div class="stat-value"><span id="avgHours">0.0</span> 小时</div>
-                <div class="stat-label">今日工时</div>
+                <div class="stat-label">日均工时</div>
             </div>
             
             <div class="stat-card">
@@ -1194,7 +1214,7 @@
             }
             
             // 创建新时段元素
-            addPeriodElement({start: '', end: ''}, periodCount - 1);
+            addPeriodElement({start: '', end: '', note: ''}, periodCount - 1);
             
             // 更新数据
             saveCurrentDateRecords();
@@ -1203,7 +1223,7 @@
         // 添加时段元素
         function addPeriodElement(record, index) {
             // 时段名称数组
-            const periodNames = ["时段1", "时段2", "时段3", "时段4"];
+            const periodNames = ["上午时段", "下午时段", "晚间时段", "夜间时段"];
             const periodIcons = ["fa-sun", "fa-sun", "fa-moon", "fa-moon"];
             
             const periodIndex = index;
@@ -1230,6 +1250,10 @@
                         <label for="end-time-${index}"><i class="fas fa-sign-out-alt"></i> 下班时间</label>
                         <input type="time" class="time-input end-time" id="end-time-${index}" value="${record.end || ''}">
                     </div>
+                    <div class="time-input-group">
+                        <label for="note-${index}"><i class="fas fa-sticky-note"></i> 工作备注</label>
+                        <textarea class="note-input" id="note-${index}" placeholder="记录工作内容（可选）">${record.note || ''}</textarea>
+                    </div>
                 </div>
                 <div class="record-actions">
                     <button class="btn btn-delete delete-period">
@@ -1251,6 +1275,10 @@
             
             periodElement.querySelector('.end-time').addEventListener('change', function() {
                 updateHours();
+                saveCurrentDateRecords();
+            });
+            
+            periodElement.querySelector('.note-input').addEventListener('input', function() {
                 saveCurrentDateRecords();
             });
             
@@ -1298,7 +1326,8 @@
             document.querySelectorAll('.record-item').forEach(item => {
                 const start = item.querySelector('.start-time').value;
                 const end = item.querySelector('.end-time').value;
-                records.push({start, end});
+                const note = item.querySelector('.note-input').value;
+                records.push({start, end, note});
             });
             
             if (records.length > 0) {
