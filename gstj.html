@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>工时统计工具</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui, sans-serif;}
+body{max-width:600px;margin:30px auto;padding:0 20px;background:#f5f7fa;}
+.card{background:white;padding:24px;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+h1{font-size:22px;margin-bottom:16px;color:#222;}
+.upload-area{border:2px dashed #ccc;border-radius:12px;padding:30px;text-align:center;cursor:pointer;margin-bottom:20px;}
+.upload-area:hover{border-color:#4e79f7;}
+#file{display:none;}
+button{background:#4e79f7;color:white;border:none;padding:10px 18px;border-radius:8px;font-size:14px;cursor:pointer;}
+button:disabled{background:#999;cursor:not-allowed;}
+.result{margin-top:20px;padding:16px;background:#f0f7ff;border-radius:12px;line-height:1.6;}
+.result h3{margin-bottom:8px;color:#222;}
+.item{margin:4px 0;}
+.total{font-size:18px;font-weight:bold;color:#2563eb;margin-top:10px;padding-top:10px;border-top:1px solid #dbeafe;}
+.salary{font-size:18px;font-weight:bold;color:#e64a19;margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>工时统计 · JSON文件解析</h1>
+  <div class="upload-area" id="dropArea">
+    <p>点击或拖拽上传 storage JSON 文件</p>
+    <input type="file" id="file" accept=".json" />
+    <button style="margin-top:12px;">选择文件</button>
+  </div>
+  <div class="result" id="result" style="display:none;"></div>
+</div>
+
+<script>
+const dropArea = document.getElementById('dropArea');
+const fileInput = document.getElementById('file');
+const result = document.getElementById('result');
+
+dropArea.addEventListener('click', () => fileInput.click());
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+  dropArea.addEventListener(evt, e => e.preventDefault());
+});
+
+dropArea.addEventListener('drop', e => {
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+});
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(file) handleFile(file);
+});
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      calcWorkHours(data);
+    } catch(err) {
+      result.innerHTML = `<span style="color:red;">文件解析失败：不是合法JSON</span>`;
+      result.style.display = 'block';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function calcWorkHours(data) {
+  if(!data?.localStorage?.timeRecords) {
+    result.innerHTML = `<span style="color:red;">未找到 timeRecords 工时数据</span>`;
+    result.style.display = 'block';
+    return;
+  }
+
+  let records = JSON.parse(data.localStorage.timeRecords);
+  let total = 0;
+  let html = `<h3>工时明细</h3>`;
+
+  Object.keys(records).forEach(date => {
+    const items = records[date];
+    items.forEach((item, idx) => {
+      const { start, end } = item;
+      if(!start || !end) return;
+
+      const t1 = new Date(`2000-01-01 ${start}`);
+      const t2 = new Date(`2000-01-01 ${end}`);
+      let hours = (t2 - t1) / 1000 / 3600;
+      if(hours < 0) hours += 24;
+
+      total += hours;
+      html += `<div class="item">${date} ${start}～${end}：${hours.toFixed(1)} 小时</div>`;
+    });
+  });
+
+  // 时薪 19 元
+  const hourlyWage = 19;
+  const salary = total * hourlyWage;
+
+  html += `<div class="total">合计总工时：${total.toFixed(1)} 小时</div>`;
+  html += `<div class="salary">时薪19元 → 预计工资：${salary.toFixed(2)} 元</div>`;
+  result.innerHTML = html;
+  result.style.display = 'block';
+}
+</script>
+</body>
+</html>
